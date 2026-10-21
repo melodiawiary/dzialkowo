@@ -828,3 +828,5 @@ html:not(.lang-en) .only-en, html.lang-en .only-pl { display: none !important; }
   .nav.open button[aria-current="true"] { color: var(--brand); font-weight: 650; }
 }
 @media (min-width: 721px) and (max-width: 1180px) { .nav.open { top: 64px; } }
+/* jasny podkład: zwykłe kafelki OpenStreetMap, wyciszone w przeglądarce (bez klucza i opłat) */
+.tiles-light { filter: grayscale(0.85) brightness(1.06) contrast(0.88) saturate(0.9); }
