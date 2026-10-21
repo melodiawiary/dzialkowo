@@ -724,6 +724,13 @@
     wojLabels = L.layerGroup().addTo(map);
     styleWoj();
   }
+  function legend() {
+    var box = $("#mapLegend"); if (!box) return;
+    var h = "";
+    if ($("#lyrFlood").checked) h += '<div class="lg"><b>' + t("map.flood") + "</b><p>" + t("lg.flood") + '</p><img src="https://wody.isok.gov.pl/wss/INSPIRE/INSPIRE_NZ_HY_MZPMRP_WMS?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetLegendGraphic&FORMAT=image/png&LAYER=NZ.Fluvial" alt="" onerror="this.remove()"></div>';
+    if ($("#lyrNatura").checked) h += '<div class="lg"><b>' + t("map.natura") + "</b><p>" + t("lg.natura") + '</p><img src="https://sdi.gdos.gov.pl/wms?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetLegendGraphic&FORMAT=image/png&LAYER=GDOS:SpecjalneObszaryOchrony" alt="" onerror="this.remove()"><img src="https://sdi.gdos.gov.pl/wms?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetLegendGraphic&FORMAT=image/png&LAYER=GDOS:ObszarySpecjalnejOchrony" alt="" onerror="this.remove()"></div>';
+    box.innerHTML = h; box.hidden = !h;
+  }
   function styleWoj() {
     if (!wojLayer) return;
     var z = map.getZoom(), on = map.hasLayer(wojLayer);
@@ -744,8 +751,8 @@
     baseLight = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, className: "tiles-light", attribution: "© OpenStreetMap" });
     baseOsm = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" });
     baseOrto = L.tileLayer.wms("https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMS/StandardResolution", { layers: "Raster", format: "image/jpeg", maxZoom: 20, attribution: "© GUGiK" });
-    lyrDz = L.tileLayer.wms("https://integracja.gugik.gov.pl/cgi-bin/KrajowaIntegracjaEwidencjiGruntow", { layers: "dzialki,numery_dzialek", format: "image/png", transparent: true, minZoom: 15, maxZoom: 20, attribution: "© GUGiK (KIEG)" });
-    lyrMp = L.tileLayer.wms("https://mapy.geoportal.gov.pl/wss/ext/KrajowaIntegracjaMiejscowychPlanowZagospodarowaniaPrzestrzennego", { layers: "raster,wektor-str,wektor-lzb,wektor-pow,wektor-lin,wektor-pkt,granice", format: "image/png", transparent: true, minZoom: 12, maxZoom: 20, opacity: 0.75, attribution: "© GUGiK (KIMPZP)" });
+    lyrDz = L.tileLayer.wms("https://integracja.gugik.gov.pl/cgi-bin/KrajowaIntegracjaEwidencjiGruntow", { layers: "dzialki,numery_dzialek", format: "image/png", transparent: true, version: "1.3.0", minZoom: 16, maxZoom: 20, attribution: "© GUGiK (KIEG)" });
+    lyrMp = L.tileLayer.wms("https://mapy.geoportal.gov.pl/wss/ext/KrajowaIntegracjaMiejscowychPlanowZagospodarowaniaPrzestrzennego", { layers: "raster,wektor-str,wektor-lzb,wektor-pow,wektor-lin,wektor-pkt,granice", format: "image/png", transparent: true, version: "1.3.0", minZoom: 12, maxZoom: 20, opacity: 0.75, attribution: "© GUGiK (KIMPZP)" });
     lyrFlood = L.tileLayer.wms("https://wody.isok.gov.pl/wss/INSPIRE/INSPIRE_NZ_HY_MZPMRP_WMS", { layers: "NZ.Fluvial,NZ.SeaWater", format: "image/png", transparent: true, version: "1.3.0", minZoom: 9, maxZoom: 20, opacity: 0.7, attribution: "© Wody Polskie (ISOK)" });
     lyrNatura = L.tileLayer.wms("https://sdi.gdos.gov.pl/wms", { layers: "GDOS:SpecjalneObszaryOchrony,GDOS:ObszarySpecjalnejOchrony", format: "image/png", transparent: true, opacity: 0.6, attribution: "© GDOŚ" });
     [[lyrFlood, "map.flood"], [lyrNatura, "map.natura"]].forEach(function (x) { var warned = false; x[0].on("tileerror", function () { if (!warned) { warned = true; toast(t("map.layerFail", { n: t(x[1]) })); } }); });
@@ -773,10 +780,11 @@
         ({ light: baseLight, osm: baseOsm, orto: baseOrto }[r.value]).addTo(map).bringToBack();
       });
     });
-    $("#lyrDzialki").addEventListener("change", function (e) { if (e.target.checked) { lyrDz.addTo(map); if (map.getZoom() < 15) toast(t("map.zoomParcels")); } else map.removeLayer(lyrDz); });
+    $("#lyrDzialki").addEventListener("change", function (e) { if (e.target.checked) { lyrDz.addTo(map); if (map.getZoom() < 16) toast(t("map.zoomParcels")); } else map.removeLayer(lyrDz); });
     $("#lyrWoj").addEventListener("change", function (e) { if (e.target.checked) wojLayer.addTo(map); else map.removeLayer(wojLayer); styleWoj(); });
     $("#lyrFlood").addEventListener("change", function (e) { if (e.target.checked) { lyrFlood.addTo(map); if (map.getZoom() < 9) toast(t("map.zoomFlood")); } else map.removeLayer(lyrFlood); });
-    $("#lyrNatura").addEventListener("change", function (e) { if (e.target.checked) lyrNatura.addTo(map); else map.removeLayer(lyrNatura); });
+    $("#lyrNatura").addEventListener("change", function (e) { if (e.target.checked) lyrNatura.addTo(map); else map.removeLayer(lyrNatura); legend(); });
+    $("#lyrFlood").addEventListener("change", legend);
     $("#lyrMpzp").addEventListener("change", function (e) { if (e.target.checked) { lyrMp.addTo(map); if (map.getZoom() < 12) toast(t("map.zoomMpzp")); } else map.removeLayer(lyrMp); });
     updateMarkers();
     fitToResults();
@@ -1023,6 +1031,7 @@
     var k = x.k, who = LL(k.who);
     return '<li class="step st-' + x.s + '"><span class="step-n">' + (x.s === "done" ? ICON.check : n) + '</span><div class="step-b"><div class="step-h"><b>' + LL(k.t) + '</b><span class="step-tag">' + (x.s === "cond" ? t("steps.cond") + ": " + LL(k.cond) : t("steps." + x.s)) + "</span></div>" +
       (x.n ? '<p class="step-note">' + esc(LL(x.n)) + "</p>" : "") + (k.p && x.s !== "done" ? '<p class="muted">' + LL(k.p) + "</p>" : "") +
+      (k.pre && x.s !== "done" ? '<p class="step-pre pre-' + k.pre + '">' + LL(KR.PRE[k.pre]) + "</p>" : "") +
       (x.s !== "done" ? '<div class="step-meta"><span>' + t("steps.who") + ": <b>" + who + "</b></span>" + (LL(k.time) !== "-" ? "<span>" + t("steps.time") + ": " + LL(k.time) + "</span><span>" + t("steps.cost") + ": " + LL(k.cost) + "</span>" : "") +
         '<button class="btn btn-ghost btn-sm" data-pro="' + esc(who) + '" data-near="' + esc(d ? d.powiat : "") + '">' + t("steps.find", { w: who.split(",")[0] }) + "</button></div>" : "") + "</div></li>";
   }

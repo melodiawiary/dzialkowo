@@ -203,7 +203,7 @@
     "map.cluster": ["{n} ofert, kliknij, aby przybliżyć", "{n} plots, tap to zoom in"],
     "map.see": ["Zobacz ofertę", "View plot"],
     "map.list": ["Lista", "List"],
-    "map.zoomParcels": ["Granice działek pojawią się po przybliżeniu mapy.", "Parcel boundaries appear after zooming in."],
+    "map.zoomParcels_old": ["Granice działek pojawią się po przybliżeniu mapy.", "Parcel boundaries appear after zooming in."],
     "map.zoomMpzp": ["Plany miejscowe pojawią się po przybliżeniu mapy.", "Zoning plans appear after zooming in."],
     "map.drawnChip": ["Narysowany obszar", "Drawn area"],
     "map.boundsChip": ["Widoczny obszar mapy", "Visible map area"],
@@ -477,6 +477,9 @@
     "hz.none": ["Nie widzimy ograniczeń w przykładowych danych tej działki.", "We see no restrictions in this plot's sample data."],
     "hz.note": ["Przykład. W pełnej wersji serwis sam sprawdza każdą działkę na mapach Wód Polskich, Państwowego Instytutu Geologicznego, GDOŚ i rejestru zabytków. To informacja z map publicznych, nie gwarancja.", "Example. In the full version every plot is checked automatically against the maps of Wody Polskie, the Polish Geological Institute, GDOŚ and the heritage register. Information from public maps, not a guarantee."],
     "nav.menu": ["Menu", "Menu"],
+    "lg.flood": ["Zaznaczony obszar może zostać zalany podczas dużej powodzi (rzecznej lub od morza). Budowa jest tam zwykle zakazana albo wymaga zgody Wód Polskich.", "The marked area may flood in a major river or sea flood. Building there is usually banned or needs consent from Wody Polskie."],
+    "lg.natura": ["Obszary Natura 2000: przyroda chroniona przez Unię Europejską (ptaki i siedliska). Budować zwykle można, ale większe inwestycje wymagają oceny wpływu na środowisko.", "Natura 2000 areas: nature protected by the EU (birds and habitats). Building is usually possible, but larger projects need an environmental assessment."],
+    "map.zoomParcels": ["Granice działek pojawiają się po mocnym przybliżeniu mapy (widok kilku ulic), numery działek jeszcze bliżej.", "Plot boundaries appear when you zoom in close (a few streets), plot numbers even closer."],
     "days.0": ["dzisiaj", "today"],
     "days.1": ["wczoraj", "yesterday"],
     "days.n": ["{n} dni temu", "{n} days ago"]
