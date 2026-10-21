@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Działkowo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Prototyp portalu z działkami budowlanymi, rekreacyjnymi, rolnymi i inwestycyjnymi.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;650;700&display=swap">
+<link rel="stylesheet" href="vendor/leaflet.css">
+<link rel="stylesheet" href="styles.css">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="logo" href="#start" data-go="home" aria-label="Działkowo">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#1d6a3a"/><path d="M7 21.5 15 17l10 3.2-8.2 5.3Z" fill="#9fd4a9"/><path d="M7 21.5 15 17l2.6.8-8.2 5.1Z" fill="#e3c86a"/><path d="M11 12.6 16 8l5 4.6V17H11Z" fill="#fff"/><path d="M14.6 13.6h2.8V17h-2.8Z" fill="#1d6a3a"/></svg>
+      <span class="name">Działkowo</span>
+      <span class="demo-pill" data-i18n="brand.tag">Prototyp</span>
+    </a>
+    <nav class="nav" aria-label="Menu">
+      <button data-nav="szukaj" data-i18n="nav.plots">Działki</button>
+      <button data-nav="mapa" data-i18n="nav.map">Mapa</button>
+      <button data-nav="licytacje" data-i18n="nav.auctions">Licytacje i przetargi</button>
+      <button data-nav="firmy" data-i18n="nav.pros">Fachowcy</button>
+      <button data-nav="ulubione" data-i18n="nav.saved">Zapisane</button>
+      <button data-contact data-i18n="nav.contact">Kontakt</button>
+    </nav>
+    <div class="top-actions">
+      <div class="lang" role="group" data-i18n-aria="top.lang"><button data-lang="pl">PL</button><button data-lang="en">EN</button></div>
+      <button class="icon-btn ct-mobile" data-contact data-i18n-aria="nav.contact"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg></button>
+      <button class="btn btn-ghost btn-sm" id="loginBtn" data-i18n="top.login">Zaloguj się</button>
+      <button class="btn btn-primary btn-sm" data-add data-i18n-aria="top.addListing">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="lbl" data-i18n="top.addListing">Dodaj ogłoszenie</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="view-home">
+  <section class="hero" id="hero">
+    <div class="hero-photo" aria-hidden="true"></div>
+    <div class="wrap">
+      <div class="hero-card">
+        <div class="hero-top">
+          <div class="hero-copy">
+            <h1 data-i18n="home.h1">Znajdź działkę tam, gdzie chcesz mieszkać</h1>
+            <p class="lead" data-i18n="home.lead"></p>
+          </div>
+          <button class="map-tile" data-nav="mapa"><svg viewBox="0 0 96 64" aria-hidden="true"><rect width="96" height="64" rx="10" fill="#e4efe2"/><path d="M-4 44C20 38 30 52 52 40S82 18 100 22" stroke="#fff" stroke-width="6" fill="none"/><path d="M30-4 40 70" stroke="#fff" stroke-width="4"/><path d="M8 10h18v16H8zM46 8h22v18H46zM70 34h20v18H70zM10 48h16v12H10z" fill="#c9dfc4" stroke="#9fc497"/><path d="M57 4c-4.4 0-8 3.4-8 7.8C49 18 57 26 57 26s8-8 8-14.2C65 7.4 61.4 4 57 4Z" fill="#1d6a3a"/><circle cx="57" cy="11.6" r="3" fill="#fff"/><path d="M19 26c-3.3 0-6 2.6-6 5.8C13 36.5 19 42 19 42s6-5.5 6-10.2C25 28.6 22.3 26 19 26Z" fill="#c2593a"/><path d="M80 30c-3.3 0-6 2.6-6 5.8C74 40.5 80 46 80 46s6-5.5 6-10.2C86 32.6 83.3 30 80 30Z" fill="#b8922a"/></svg><span><b data-i18n="home.mapH">Szukaj na mapie</b><small data-i18n="home.mapP"></small></span></button>
+        </div>
+        <div class="canbuy only-en">
+          <div><b data-i18n="can.h"></b><span data-i18n="can.p"></span></div>
+          <button class="btn btn-primary btn-lg" type="button" data-canbuy><span data-i18n="can.btn"></span></button>
+        </div>
+        <form class="searchbar" id="homeSearch" autocomplete="off">
+          <div class="sb-tabs op-toggle" role="group">
+            <button type="button" data-op="sprzedaz" aria-pressed="true" data-i18n="sb.buy">Kupno</button>
+            <button type="button" data-op="dzierzawa" aria-pressed="false" data-i18n="sb.lease">Dzierżawa</button>
+          </div>
+          <div class="sb-row">
+            <div class="sb-field"><span class="lbl" data-i18n="sb.where">Lokalizacja</span><button type="button" class="sb-pick" id="hs-loc"></button></div>
+            <div class="sb-field"><label for="hs-typ" data-i18n="sb.type">Rodzaj</label><select id="hs-typ"></select></div>
+            <div class="sb-field"><label for="hs-size" data-i18n="sb.areaLbl">Powierzchnia</label><select id="hs-size"></select></div>
+            <div class="sb-field"><label for="hs-cmax" data-i18n="sb.priceMax">Cena do</label><select id="hs-cmax"></select></div>
+            <div class="sb-field"><label for="hs-plan" data-i18n="sb.plan">Plan / WZ</label><select id="hs-plan"></select></div>
+            <div class="sb-go">
+              <button class="btn btn-primary btn-lg" type="submit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span id="hsGoLbl">Szukaj</span></button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- Polska wersja: okolica użytkownika -->
+  <section class="section"><div class="wrap">
+    <div class="section-head"><div><h2 id="catsTitle" data-i18n="cats.title">Rodzaj działki</h2></div></div>
+    <div class="cats" id="cats"></div>
+    <div class="cat-more"><label for="catMore" data-i18n="cats.more">Inne rodzaje działek</label><select class="input" id="catMore"></select></div>
+  </div></section>
+  <section class="section only-pl" id="nearSection"><div class="wrap" id="near"></div></section>
+  <section class="section" id="recentSection" hidden><div class="wrap">
+    <div class="section-head"><div><h2 data-i18n="recent.title">Ostatnio oglądane</h2></div></div>
+    <div class="row-scroll" id="recent"></div>
+  </div></section>
+
+  <!-- Wersja angielska: miasta, krajobraz, przewodnik -->
+  <section class="section only-en"><div class="wrap">
+    <div class="section-head"><div><h2 data-i18n="metro.title"></h2><p data-i18n="metro.lead"></p></div></div>
+    <div class="city-tabs" id="cityTabs" role="tablist"></div>
+    <div class="grid-cards" id="cityCards"></div>
+    <div class="more"><button class="btn btn-ghost" id="citySeeAll"></button></div>
+  </div></section>
+
+
+  <section class="section only-en" id="guide"><div class="wrap">
+    <div class="guide">
+      <div class="guide-steps">
+        <h2 data-i18n="guide.title"></h2>
+        <p class="muted" data-i18n="guide.lead"></p>
+        <ol>
+          <li><b data-i18n="guide.s1h"></b><span data-i18n="guide.s1p"></span></li>
+          <li><b data-i18n="guide.s2h"></b><span data-i18n="guide.s2p"></span></li>
+          <li><b data-i18n="guide.s3h"></b><span data-i18n="guide.s3p"></span></li>
+          <li><b data-i18n="guide.s4h"></b><span data-i18n="guide.s4p"></span></li>
+        </ol>
+      </div>
+      <div class="panel guide-check">
+        <h3 data-i18n="guide.check"></h3>
+        <p class="muted" data-i18n="guide.checkLead"></p>
+        <div class="buyer-pick" id="buyerPickHome"></div>
+        <div id="buyerAnswerHome"></div>
+      </div>
+    </div>
+  </div></section>
+
+  <section class="section"><div class="wrap">
+    <div class="values">
+      <div class="value"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/></svg><h3 data-i18n="values.map.h"></h3><p data-i18n="values.map.p"></p></div>
+      <div class="value"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6l-8-3Z"/><path d="m8.5 12 2.5 2.5 4.5-5" stroke-linecap="round"/></svg><h3 data-i18n="values.ver.h"></h3><p data-i18n="values.ver.p"></p></div>
+      <div class="value"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h8M8 15h5"/></svg><h3 data-i18n="values.cost.h"></h3><p data-i18n="values.cost.p"></p></div>
+    </div>
+  </div></section>
+
+  <section class="band"><div class="wrap">
+    <div>
+      <h2 data-i18n="seller.h"></h2>
+      <p data-i18n="seller.p"></p>
+      <button class="btn btn-light btn-lg" data-add data-i18n="top.addListing"></button>
+    </div>
+    <ol>
+      <li><b>01</b><span><span data-i18n="seller.s1"></span><small data-i18n="seller.s1s"></small></span></li>
+      <li><b>02</b><span><span data-i18n="seller.s2"></span><small data-i18n="seller.s2s"></small></span></li>
+      <li><b>03</b><span><span data-i18n="seller.s3"></span><small data-i18n="seller.s3s"></small></span></li>
+    </ol>
+  </div></section>
+</main>
+
+<main id="view-search" hidden>
+  <div class="results mode-split" id="results">
+    <aside class="filters" id="filters" data-i18n-aria="f.title"></aside>
+    <section class="listcol" id="listcol">
+      <button class="crumb-home" data-go>&larr; <span data-i18n="crumb.home">Strona główna</span></button>
+      <div class="list-head">
+        <div><h2 id="resTitle"></h2><div class="muted" id="resCount"></div></div>
+        <div class="list-tools">
+          <button class="btn btn-ghost btn-sm only-narrow" id="openFilters"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span data-i18n="res.filters">Filtry</span></button>
+          <select class="input" id="sort" aria-label="Sort"></select>
+          <div class="view-toggle" role="group">
+            <button data-mode="list" aria-pressed="false" data-i18n="res.list">Lista</button>
+            <button data-mode="split" class="split-opt" aria-pressed="true" data-i18n="res.split">Lista i mapa</button>
+            <button data-mode="map" aria-pressed="false" data-i18n="res.map">Mapa</button>
+          </div>
+          <button class="btn btn-ghost btn-sm" id="saveSearch" data-i18n-aria="res.save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg><span class="lbl" data-i18n="res.save">Zapisz wyszukiwanie</span></button>
+        </div>
+      </div>
+      <div id="qHints"></div>
+      <div class="active-filters" id="activeFilters"></div>
+      <div class="results-grid" id="resultsGrid"></div>
+      <div class="more" id="more"></div>
+      <p class="avg" id="avgLine"></p>
+      <p class="avg only-en" data-i18n="eur.note"></p>
+    </section>
+    <section class="mapcol" id="mapcol">
+      <div id="map" aria-label="Map"></div>
+      <button class="map-home" data-go>&larr; <span data-i18n="crumb.home">Strona główna</span></button>
+      <div class="map-tools">
+        <div class="map-panel">
+          <button id="drawBtn" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 18 8 5l8 3 4 10Z"/></svg><span id="drawLbl" data-i18n="map.draw">Rysuj obszar</span></button>
+          <button id="clearDraw" hidden data-i18n="map.clear">Usuń obszar</button>
+          <label><input type="checkbox" id="boundsOnly"><span data-i18n="map.bounds">Szukaj przy przesuwaniu</span></label>
+          <button id="layersBtn" aria-expanded="false" aria-controls="layers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></svg><span data-i18n="map.layers">Warstwy</span></button>
+        </div>
+        <div class="map-panel only-narrow"><button id="mapToList" data-i18n="map.list">Lista</button></div>
+      </div>
+      <div class="draw-hint" id="drawHint" hidden data-i18n="map.drawHint"></div>
+      <div class="layers" id="layers" hidden>
+        <b data-i18n="map.base">Podkład</b>
+        <label><input type="radio" name="base" value="osm" checked><span data-i18n="map.osm">Mapa</span></label>
+        <label><input type="radio" name="base" value="orto"><span data-i18n="map.orto">Ortofotomapa</span></label>
+        <b>Geoportal</b>
+        <label><input type="checkbox" id="lyrDzialki"><span data-i18n="map.parcels">Działki ewidencyjne</span></label>
+        <label><input type="checkbox" id="lyrMpzp"><span data-i18n="map.mpzp">Plany miejscowe</span></label>
+        <small data-i18n="map.zoomHint"></small>
+      </div>
+      <div class="map-note" id="mapNote" hidden></div>
+    </section>
+  </div>
+</main>
+
+<main id="view-firmy" hidden>
+  <section class="section"><div class="wrap">
+    <div class="section-head"><div><h2 data-i18n="pros.title"></h2><p data-i18n="pros.lead"></p></div></div>
+    <div class="trades" id="firmySteps"></div>
+  </div></section>
+</main>
+
+<footer class="foot"><div class="wrap" id="footWrap"></div></footer>
+
+<nav class="tabbar" aria-label="Menu">
+  <button data-nav="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 11 12 4l8 7v9H4Z"/></svg><span data-i18n="nav.home">Start</span></button>
+  <button data-nav="szukaj"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span data-i18n="nav.search">Szukaj</span></button>
+  <button data-nav="mapa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/></svg><span data-i18n="nav.map">Mapa</span></button>
+  <button data-nav="ulubione"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/></svg><span data-i18n="nav.saved">Zapisane</span></button>
+  <button data-add><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg><span data-i18n="nav.add">Dodaj</span></button>
+</nav>
+
+<datalist id="towns"></datalist>
+<div id="overlayRoot"></div>
+
+<script src="vendor/leaflet.js"></script>
+<script src="i18n.js"></script>
+<script src="data.js"></script>
+<script src="aerial.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
