@@ -460,6 +460,8 @@
       (EN() ? ["Tricity", "Kashubia", "Masuria", "Warsaw", "Kraków", "Wrocław", "Poznań"] : ["Trójmiasto", "Kaszuby", "Mazury", "Roztocze", "Okolice Warszawy"]).map(function (r) { return '<option value="' + r + '"></option>'; }).join("");
     renderFooter();
     updateHomeCount();
+    var IC3 = [ICON.pin, ICON.shield, '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M4 11 12 4l8 7v9H4Z"/><path d="M10 20v-5h4v5"/></svg>'];
+    $("#three").innerHTML = [1, 2, 3].map(function (i) { return '<button class="three-i" data-three="' + i + '"><span class="three-ic">' + IC3[i - 1] + '</span><span class="three-n">' + i + '</span><b>' + t("three." + i + "h") + "</b><span>" + t("three." + i + "p") + "</span></button>"; }).join("");
   }
   function renderFooter() {
     var cols = [["foot.search", "foot.l1"], ["foot.sell", "foot.l2"], ["foot.portal", "foot.l3"]];
@@ -698,20 +700,56 @@
     }
     renderFilters();
     updateMarkers();
+    if (map) styleWoj();
   }
 
   /* ---------- Mapa ---------- */
+  var baseLight, lyrFlood, lyrNatura, wojLayer, wojLabels;
+  var WCOL = ["#e07a5f", "#3d85c6", "#81b29a", "#f2cc8f", "#9b5de5", "#00a6a6", "#f15bb5", "#8ac926", "#ff924c", "#4361ee", "#c9a227", "#2a9d8f", "#e76f51", "#6a4c93", "#43aa8b", "#b5838d"];
+  function buildWoj() {
+    if (!window.WOJ_GEO) return;
+    var i = 0;
+    wojLayer = L.geoJSON(window.WOJ_GEO, {
+      style: function () { var c = WCOL[i++ % WCOL.length]; return { color: c, weight: 1.6, opacity: 0.9, fillColor: c, fillOpacity: 0.09 }; },
+      onEachFeature: function (f, layer) {
+        layer.on("click", function () {
+          if (drawing || map.getZoom() >= 9) return;
+          S.q = f.properties.n; S.radius = 0; renderResults(); map.fitBounds(layer.getBounds(), { padding: [20, 20] });
+        });
+        layer.on("mouseover", function () { if (map.getZoom() < 9) layer.setStyle({ fillOpacity: 0.2 }); });
+        layer.on("mouseout", function () { styleWoj(); });
+      }
+    }).addTo(map);
+    map.createPane("wojLbl"); map.getPane("wojLbl").style.zIndex = 450; map.getPane("wojLbl").style.pointerEvents = "none";
+    wojLabels = L.layerGroup().addTo(map);
+    styleWoj();
+  }
+  function styleWoj() {
+    if (!wojLayer) return;
+    var z = map.getZoom(), on = map.hasLayer(wojLayer);
+    wojLayer.eachLayer(function (l) { l.setStyle({ fillOpacity: z >= 9 ? 0 : 0.09, weight: z >= 9 ? 2.2 : 1.6, interactive: z < 9 }); });
+    wojLabels.clearLayers();
+    if (!on || z >= 8) return;
+    wojLayer.eachLayer(function (l) {
+      var n = l.feature.properties.n, cnt = current.filter(function (d) { return d.woj === n; }).length;
+      L.marker(l.getBounds().getCenter(), { pane: "wojLbl", interactive: false, keyboard: false, icon: L.divIcon({ className: "woj-lbl-wrap", html: '<span class="woj-lbl">' + esc(EN() ? WOJ_EN[n] : n) + "</span>", iconSize: [0, 0] }) }).addTo(wojLabels);
+    });
+  }
   var map, markerLayer, markers = {}, baseOsm, baseOrto, lyrDz, lyrMp, polyLayer, drawPts = [], drawLine, drawing = false, tileFail = false, drawGroup;
   var HAS_L = typeof window.L !== "undefined";
   function initMap() {
     if (map || !HAS_L) return;
     map = L.map("map", { zoomControl: true }).setView([52.1, 19.4], 6);
     map.attributionControl.setPrefix(false);
+    baseLight = L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", { maxZoom: 19, subdomains: "abcd", attribution: "© OpenStreetMap, © CARTO" });
     baseOsm = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" });
     baseOrto = L.tileLayer.wms("https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMS/StandardResolution", { layers: "Raster", format: "image/jpeg", maxZoom: 20, attribution: "© GUGiK" });
     lyrDz = L.tileLayer.wms("https://integracja.gugik.gov.pl/cgi-bin/KrajowaIntegracjaEwidencjiGruntow", { layers: "dzialki,numery_dzialek", format: "image/png", transparent: true, minZoom: 15, maxZoom: 20, attribution: "© GUGiK (KIEG)" });
     lyrMp = L.tileLayer.wms("https://mapy.geoportal.gov.pl/wss/ext/KrajowaIntegracjaMiejscowychPlanowZagospodarowaniaPrzestrzennego", { layers: "raster,wektor-str,wektor-lzb,wektor-pow,wektor-lin,wektor-pkt,granice", format: "image/png", transparent: true, minZoom: 12, maxZoom: 20, opacity: 0.75, attribution: "© GUGiK (KIMPZP)" });
-    [baseOsm, baseOrto, lyrDz, lyrMp].forEach(function (l) {
+    lyrFlood = L.tileLayer.wms("https://wody.isok.gov.pl/wss/INSPIRE/INSPIRE_NZ_HY_MZPMRP_WMS", { layers: "NZ.Fluvial,NZ.SeaWater", format: "image/png", transparent: true, version: "1.3.0", minZoom: 9, maxZoom: 20, opacity: 0.7, attribution: "© Wody Polskie (ISOK)" });
+    lyrNatura = L.tileLayer.wms("https://sdi.gdos.gov.pl/wms", { layers: "GDOS:SpecjalneObszaryOchrony,GDOS:ObszarySpecjalnejOchrony", format: "image/png", transparent: true, opacity: 0.6, attribution: "© GDOŚ" });
+    [[lyrFlood, "map.flood"], [lyrNatura, "map.natura"]].forEach(function (x) { var warned = false; x[0].on("tileerror", function () { if (!warned) { warned = true; toast(t("map.layerFail", { n: t(x[1]) })); } }); });
+    [baseLight, baseOsm, baseOrto, lyrDz, lyrMp].forEach(function (l) {
       l.on("tileerror", function () {
         if (tileFail) return; tileFail = true;
         var n = $("#mapNote"); n.hidden = false;
@@ -719,22 +757,26 @@
         $(".note-x", n).addEventListener("click", function () { n.hidden = true; });
       });
     });
-    baseOsm.addTo(map);
+    baseLight.addTo(map);
+    buildWoj();
     markerLayer = L.layerGroup().addTo(map);
     drawGroup = L.layerGroup().addTo(map);
     ALL.forEach(addMarker);
-    map.on("zoomend", function () { if (!$("#boundsOnly").checked) updateMarkers(); });
+    map.on("zoomend", function () { styleWoj(); if (!$("#boundsOnly").checked) updateMarkers(); });
     map.on("moveend", function () { if ($("#boundsOnly").checked) { S.bounds = map.getBounds(); renderResults(true); } });
     map.on("click", onMapClick);
     map.on("click", function () { var l = $("#layers"); if (!l.hidden) { l.hidden = true; $("#layersBtn").setAttribute("aria-expanded", "false"); } });
     map.on("dblclick", function () { if (drawing && drawPts.length >= 3) finishDraw(); });
     $$('#layers input[name="base"]').forEach(function (r) {
       r.addEventListener("change", function () {
-        if (r.value === "orto") { map.removeLayer(baseOsm); baseOrto.addTo(map); } else { map.removeLayer(baseOrto); baseOsm.addTo(map); }
-        baseOrto.bringToBack(); baseOsm.bringToBack();
+        [baseLight, baseOsm, baseOrto].forEach(function (b) { if (map.hasLayer(b)) map.removeLayer(b); });
+        ({ light: baseLight, osm: baseOsm, orto: baseOrto }[r.value]).addTo(map).bringToBack();
       });
     });
     $("#lyrDzialki").addEventListener("change", function (e) { if (e.target.checked) { lyrDz.addTo(map); if (map.getZoom() < 15) toast(t("map.zoomParcels")); } else map.removeLayer(lyrDz); });
+    $("#lyrWoj").addEventListener("change", function (e) { if (e.target.checked) wojLayer.addTo(map); else map.removeLayer(wojLayer); styleWoj(); });
+    $("#lyrFlood").addEventListener("change", function (e) { if (e.target.checked) { lyrFlood.addTo(map); if (map.getZoom() < 9) toast(t("map.zoomFlood")); } else map.removeLayer(lyrFlood); });
+    $("#lyrNatura").addEventListener("change", function (e) { if (e.target.checked) lyrNatura.addTo(map); else map.removeLayer(lyrNatura); });
     $("#lyrMpzp").addEventListener("change", function (e) { if (e.target.checked) { lyrMp.addTo(map); if (map.getZoom() < 12) toast(t("map.zoomMpzp")); } else map.removeLayer(lyrMp); });
     updateMarkers();
     fitToResults();
@@ -915,7 +957,7 @@
       (!EN() && !(d.typ === "rod" || ((d.typ === "rolna" || d.typ === "siedliskowa") && d.pow >= 3000)) ? buyBox : "") +
       '<section class="dsec"><h2>' + t("d.location") + '</h2><div class="minimap" id="minimap"></div><p class="muted small" style="margin-top:10px">' + t("d.locNote") + ' <a href="https://www.google.com/maps/search/?api=1&query=' + d.lat + "," + d.lng + '" target="_blank" rel="noopener">Google Maps</a> · <a href="https://mapy.geoportal.gov.pl/" target="_blank" rel="noopener">Geoportal</a></p></section>' +
       hist +
-      '<section class="dsec"><h2>' + t("d.after") + '</h2><p class="muted" style="margin-bottom:12px">' + t("d.afterP", { a: esc(d.miejscowosc) }) + '</p><div class="pros">' + t("pros.list").map(function (x) { return "<span>" + x + "</span>"; }).join("") + "</div></section>" +
+      hazardHTML(d) + stepsHTML(d) +
       (similar.length ? '<section class="dsec"><h2>' + t("d.similar") + '</h2><div class="grid-cards sim">' + similar.map(cardHTML).join("") + "</div></section>" : "") +
       "</div>" +
       '<aside class="dside"><div class="sticky-side">' +
@@ -972,6 +1014,46 @@
     $("#overlayRoot").innerHTML = ""; document.body.style.overflow = "";
     if (!fromPop && /^#d\d+$/.test(location.hash)) setHash(currentView === "home" ? "start" : currentView);
     if (currentView === "home") renderRecent();
+  }
+
+  /* ---------- Ścieżka krok po kroku i zagrożenia ---------- */
+  var KR = window.KROKI;
+  var ST_ICON = { done: "check", todo: "arrow", check: "info", warn: "warn", cond: "info" };
+  function stepItem(x, n, d) {
+    var k = x.k, who = LL(k.who);
+    return '<li class="step st-' + x.s + '"><span class="step-n">' + (x.s === "done" ? ICON.check : n) + '</span><div class="step-b"><div class="step-h"><b>' + LL(k.t) + '</b><span class="step-tag">' + (x.s === "cond" ? t("steps.cond") + ": " + LL(k.cond) : t("steps." + x.s)) + "</span></div>" +
+      (x.n ? '<p class="step-note">' + esc(LL(x.n)) + "</p>" : "") + (k.p && x.s !== "done" ? '<p class="muted">' + LL(k.p) + "</p>" : "") +
+      (x.s !== "done" ? '<div class="step-meta"><span>' + t("steps.who") + ": <b>" + who + "</b></span>" + (LL(k.time) !== "-" ? "<span>" + t("steps.time") + ": " + LL(k.time) + "</span><span>" + t("steps.cost") + ": " + LL(k.cost) + "</span>" : "") +
+        '<button class="btn btn-ghost btn-sm" data-pro="' + esc(who) + '" data-near="' + esc(d ? d.powiat : "") + '">' + t("steps.find", { w: who.split(",")[0] }) + "</button></div>" : "") + "</div></li>";
+  }
+  function stepsList(list, d) {
+    var html = "", ph = null, n = 0;
+    list.forEach(function (x) {
+      if (x.k.ph !== ph) { if (ph) html += "</ol>"; ph = x.k.ph; html += '<h3 class="phase">' + LL(KR.PH[ph]) + '</h3><ol class="steps">'; }
+      n++; html += stepItem(x, n, d);
+    });
+    return html + "</ol>";
+  }
+  function stepsHTML(d) {
+    if (!KR) return "";
+    var list = KR.build(d), g = KR.GOALS[KR.goalFor(d)];
+    var c = list.filter(function (x) { return x.s === "check"; }).length, w = list.filter(function (x) { return x.s === "warn"; }).length, dn = list.filter(function (x) { return x.s === "done"; }).length;
+    return '<section class="dsec" id="stepsSec"><h2>' + t("steps.title") + '</h2><p class="muted">' + t("steps.goal") + ": <b>" + LL(g.n) + "</b> · " + t("steps.sum", { c: c, w: w, d: dn }) + "</p>" + stepsList(list, d) + '<p class="muted small">' + t("guide2.draft") + "</p></section>";
+  }
+  function hazardHTML(d) {
+    if (!KR) return "";
+    var h = KR.hazards(d);
+    return '<section class="dsec"><h2>' + t("hz.title") + "</h2>" + (h.length ? h.map(function (x) { var z = KR.HZ[x[1]]; return '<div class="callout ' + x[0] + '">' + (x[0] === "warn" ? ICON.warn : ICON.info) + "<div><b>" + LL(z[0]) + "</b><p>" + LL(z[1]) + "</p></div></div>"; }).join("") : '<p class="desc">' + t("hz.none") + "</p>") + '<p class="muted small">' + t("hz.note") + "</p></section>";
+  }
+  var guideGoal = "dom";
+  function renderGuide() {
+    if (!KR) return;
+    var goals = ["dom", "letnisko", "siedlisko", "hala"];
+    $("#goalTabs").innerHTML = goals.map(function (g) { return '<button role="tab" data-goal="' + g + '" aria-selected="' + (guideGoal === g) + '"><b>' + LL(KR.GOALS[g].n) + "</b><span>" + LL(KR.GOALS[g].d) + "</span></button>"; }).join("") +
+      '<button role="tab" data-goal="sell" aria-selected="' + (guideGoal === "sell") + '"><b>' + t("guide2.sell") + "</b><span>" + t("top.addListing") + "</span></button>";
+    if (guideGoal === "sell") {
+      $("#guideBody").innerHTML = '<ol class="steps">' + KR.SELL.map(function (x, i) { return '<li class="step st-todo"><span class="step-n">' + (i + 1) + '</span><div class="step-b"><div class="step-h"><b>' + LL(x[0]) + '</b></div><p class="muted">' + LL(x[1]) + "</p></div></li>"; }).join("") + "</ol>";
+    } else $("#guideBody").innerHTML = stepsList(KR.build(null, guideGoal), null) + '<p class="muted small" style="margin-top:14px">' + t("guide2.draft") + "</p>";
   }
 
   /* ---------- Dodawanie ogłoszenia (demo) ---------- */
@@ -1060,28 +1142,7 @@
   }
 
   /* ---------- Fachowcy ---------- */
-  function renderFirmy() {
-    var etapy = EN() ? [
-      ["Before you buy", "Check the zoning, the land register and any rights of way.", "Architect, lawyer"],
-      ["Survey and soil", "A survey map for the design and a soil report.", "Surveyor, soil engineer"],
-      ["Design and finance", "A house design or an adapted catalogue design, and a mortgage.", "Architect, mortgage broker"],
-      ["Utilities", "Electricity, water, gas, sewage, or a well and septic tank.", "Electrician, plumber"],
-      ["Permits", "Building permit or notification, site log.", "Site manager"],
-      ["Shell", "Foundations, walls, roof.", "Builder, roofer"],
-      ["Installations", "Heat pump, solar panels, windows.", "Installers"],
-      ["Outside", "Fence, driveway, garden.", "Paving, gardener"]
-    ] : [
-      ["Przed zakupem", "Sprawdzenie planu i WZ, analiza księgi wieczystej.", "Architekt, prawnik"],
-      ["Mapa i grunt", "Mapa do celów projektowych i badania geotechniczne.", "Geodeta, geolog"],
-      ["Projekt i finansowanie", "Projekt domu lub adaptacja gotowego, kredyt na budowę.", "Architekt, doradca kredytowy"],
-      ["Przyłącza", "Prąd, woda, gaz, kanalizacja albo studnia i oczyszczalnia.", "Elektryk, hydraulik, studniarz"],
-      ["Formalności budowy", "Pozwolenie lub zgłoszenie, dziennik budowy.", "Kierownik budowy"],
-      ["Stan surowy", "Fundamenty, ściany, dach.", "Firma budowlana, dekarz"],
-      ["Instalacje", "Pompa ciepła, fotowoltaika, okna.", "Instalatorzy"],
-      ["Otoczenie", "Ogrodzenie, podjazd, ogród.", "Brukarz, ogrodnik"]
-    ];
-    $("#firmySteps").innerHTML = etapy.map(function (e, i) { return '<div><span class="n">' + String(i + 1).padStart(2, "0") + "</span><h3>" + e[0] + "</h3><p>" + e[1] + '</p><div class="who-t">' + e[2] + "</div></div>"; }).join("");
-  }
+  function renderFirmy() { renderGuide(); }
 
   /* ---------- Nawigacja ---------- */
   var currentView = "home";
@@ -1147,6 +1208,9 @@
         if (S.favOnly && currentView === "szukaj") renderResults(true);
         return;
       }
+      var nv0 = $("#mainNav");
+      if (e.target.closest("#menuBtn")) { var op = !nv0.classList.contains("open"); nv0.classList.toggle("open", op); $("#menuBtn").setAttribute("aria-expanded", String(op)); return; }
+      if (nv0.classList.contains("open") && (e.target.closest("#mainNav button") || !e.target.closest("#mainNav"))) { nv0.classList.remove("open"); $("#menuBtn").setAttribute("aria-expanded", "false"); }
       if ((x = e.target.closest("[data-lang]"))) { setLang(x.dataset.lang); return; }
       if ((x = e.target.closest("[data-open]"))) { openDetail(+x.dataset.open); return; }
       if ((x = e.target.closest("[data-add]"))) { e.preventDefault(); openAdd(); return; }
@@ -1170,6 +1234,9 @@
       }
       if (e.target.closest("#hs-loc")) { openLoc(t("loc.title"), function (q, r) { home.q = q; home.r = r; $("#hs-loc").innerHTML = "<span>" + esc(locLabel(q, r)) + "</span>" + ICON.chev; updateHomeCount(); }); return; }
       if (e.target.closest("[data-contact]")) { openContact(); return; }
+      if ((x = e.target.closest("[data-goal]"))) { guideGoal = x.dataset.goal; renderGuide(); return; }
+      if ((x = e.target.closest("[data-pro]"))) { toast(t("steps.proToast", { w: x.dataset.pro, a: x.dataset.near || (EN() ? "you" : "Ciebie") })); return; }
+      if ((x = e.target.closest("[data-three]"))) { var w3 = x.dataset.three; if (w3 === "1") { S = emptyState(); go("mapa"); } else if (w3 === "2") { var ex = ALL.find(function (d) { return d.zweryfikowany && d.typ === "budowlana" && d.plan.status !== "MPZP"; }) || ALL[0]; openDetail(ex.id); setTimeout(function () { var el = $("#stepsSec"); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }, 350); } else go("firmy"); return; }
       if (e.target.closest("[data-canbuy]")) { openCanBuy(); return; }
       if ((x = e.target.closest("[data-city]"))) { cityKey = x.dataset.city; renderCities(); return; }
       if ((x = e.target.closest("[data-buyer]")) && !x.closest("#detailOverlay")) { buyer = x.dataset.buyer; store.set("buyer", buyer); renderHomeBuyer(); return; }

@@ -22,7 +22,7 @@
       <span class="name">Działkowo</span>
       <span class="demo-pill" data-i18n="brand.tag">Prototyp</span>
     </a>
-    <nav class="nav" aria-label="Menu">
+    <nav class="nav" id="mainNav" aria-label="Menu">
       <button data-nav="szukaj" data-i18n="nav.plots">Działki</button>
       <button data-nav="mapa" data-i18n="nav.map">Mapa</button>
       <button data-nav="licytacje" data-i18n="nav.auctions">Licytacje i przetargi</button>
@@ -32,6 +32,7 @@
     </nav>
     <div class="top-actions">
       <div class="lang" role="group" data-i18n-aria="top.lang"><button data-lang="pl">PL</button><button data-lang="en">EN</button></div>
+      <button class="icon-btn menu-btn" id="menuBtn" aria-expanded="false" aria-controls="mainNav" data-i18n-aria="nav.menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
       <button class="icon-btn ct-mobile" data-contact data-i18n-aria="nav.contact"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg></button>
       <button class="btn btn-ghost btn-sm" id="loginBtn" data-i18n="top.login">Zaloguj się</button>
       <button class="btn btn-primary btn-sm" data-add data-i18n-aria="top.addListing">
@@ -78,6 +79,7 @@
   </section>
 
   <!-- Polska wersja: okolica użytkownika -->
+  <section class="section three-sec"><div class="wrap"><div class="three" id="three"></div></div></section>
   <section class="section"><div class="wrap">
     <div class="section-head"><div><h2 id="catsTitle" data-i18n="cats.title">Rodzaj działki</h2></div></div>
     <div class="cats" id="cats"></div>
@@ -181,11 +183,16 @@
       <div class="draw-hint" id="drawHint" hidden data-i18n="map.drawHint"></div>
       <div class="layers" id="layers" hidden>
         <b data-i18n="map.base">Podkład</b>
-        <label><input type="radio" name="base" value="osm" checked><span data-i18n="map.osm">Mapa</span></label>
+        <label><input type="radio" name="base" value="light" checked><span data-i18n="map.light">Mapa jasna</span></label>
+        <label><input type="radio" name="base" value="osm"><span data-i18n="map.osm">Mapa</span></label>
         <label><input type="radio" name="base" value="orto"><span data-i18n="map.orto">Ortofotomapa</span></label>
         <b>Geoportal</b>
         <label><input type="checkbox" id="lyrDzialki"><span data-i18n="map.parcels">Działki ewidencyjne</span></label>
         <label><input type="checkbox" id="lyrMpzp"><span data-i18n="map.mpzp">Plany miejscowe</span></label>
+        <label><input type="checkbox" id="lyrWoj" checked><span data-i18n="map.woj">Województwa</span></label>
+        <b data-i18n="map.hz">Zagrożenia</b>
+        <label><input type="checkbox" id="lyrFlood"><span data-i18n="map.flood">Strefy powodziowe</span></label>
+        <label><input type="checkbox" id="lyrNatura"><span data-i18n="map.natura">Natura 2000</span></label>
         <small data-i18n="map.zoomHint"></small>
       </div>
       <div class="map-note" id="mapNote" hidden></div>
@@ -195,8 +202,9 @@
 
 <main id="view-firmy" hidden>
   <section class="section"><div class="wrap">
-    <div class="section-head"><div><h2 data-i18n="pros.title"></h2><p data-i18n="pros.lead"></p></div></div>
-    <div class="trades" id="firmySteps"></div>
+    <div class="section-head"><div><h2 data-i18n="guide2.title"></h2><p data-i18n="guide2.lead"></p></div></div>
+    <div class="goal-tabs" id="goalTabs" role="tablist"></div>
+    <div id="guideBody"></div>
   </div></section>
 </main>
 
@@ -217,6 +225,8 @@
 <script src="i18n.js"></script>
 <script src="data.js"></script>
 <script src="aerial.js"></script>
+<script src="woj.js"></script>
+<script src="kroki.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
