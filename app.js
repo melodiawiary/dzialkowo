@@ -704,7 +704,8 @@
   }
 
   /* ---------- Mapa ---------- */
-  var baseLight, lyrFlood, lyrNatura, wojLayer, wojLabels;
+  var baseLight, lyrFlood, lyrNatura, lyrUtils, wojLayer, wojLabels;
+  var PL_VIEW = [[49.0, 14.1], [54.85, 24.15]], PL_MAX = [[47.6, 12.2], [56.2, 26.2]];
   var WCOL = ["#e07a5f", "#3d85c6", "#81b29a", "#f2cc8f", "#9b5de5", "#00a6a6", "#f15bb5", "#8ac926", "#ff924c", "#4361ee", "#c9a227", "#2a9d8f", "#e76f51", "#6a4c93", "#43aa8b", "#b5838d"];
   function buildWoj() {
     if (!window.WOJ_GEO) return;
@@ -746,7 +747,14 @@
   var HAS_L = typeof window.L !== "undefined";
   function initMap() {
     if (map || !HAS_L) return;
-    map = L.map("map", { zoomControl: true }).setView([52.1, 19.4], 6);
+    map = L.map("map", { zoomControl: true, maxBounds: PL_MAX, maxBoundsViscosity: 1, minZoom: 5 }).setView([52.1, 19.4], 6);
+    var fitMin = function () { map.setMinZoom(Math.max(5, map.getBoundsZoom(PL_VIEW, false) - 0)); };
+    fitMin(); map.on("resize", fitMin);
+    var AllPl = L.Control.extend({ options: { position: "topleft" }, onAdd: function () {
+      var b = L.DomUtil.create("button", "allpl-btn"); b.type = "button"; b.title = t("map.allPl"); b.setAttribute("aria-label", t("map.allPl"));
+      b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>';
+      L.DomEvent.disableClickPropagation(b); L.DomEvent.on(b, "click", function () { map.fitBounds(PL_VIEW); }); return b; } });
+    new AllPl().addTo(map);
     map.attributionControl.setPrefix(false);
     baseLight = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, className: "tiles-light", attribution: "© OpenStreetMap" });
     baseOsm = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" });
@@ -754,8 +762,9 @@
     lyrDz = L.tileLayer.wms("https://integracja.gugik.gov.pl/cgi-bin/KrajowaIntegracjaEwidencjiGruntow", { layers: "dzialki,numery_dzialek", format: "image/png", transparent: true, version: "1.3.0", minZoom: 16, maxZoom: 20, attribution: "© GUGiK (KIEG)" });
     lyrMp = L.tileLayer.wms("https://mapy.geoportal.gov.pl/wss/ext/KrajowaIntegracjaMiejscowychPlanowZagospodarowaniaPrzestrzennego", { layers: "raster,wektor-str,wektor-lzb,wektor-pow,wektor-lin,wektor-pkt,granice", format: "image/png", transparent: true, version: "1.3.0", minZoom: 12, maxZoom: 20, opacity: 0.75, attribution: "© GUGiK (KIMPZP)" });
     lyrFlood = L.tileLayer.wms("https://wody.isok.gov.pl/wss/INSPIRE/INSPIRE_NZ_HY_MZPMRP_WMS", { layers: "NZ.Fluvial,NZ.SeaWater", format: "image/png", transparent: true, version: "1.3.0", minZoom: 9, maxZoom: 20, opacity: 0.7, attribution: "© Wody Polskie (ISOK)" });
+    lyrUtils = L.tileLayer.wms("https://integracja.gugik.gov.pl/cgi-bin/KrajowaIntegracjaUzbrojeniaTerenu", { layers: "przewod_elektroenergetyczny,przewod_wodociagowy,przewod_kanalizacyjny,przewod_gazowy,przewod_cieplowniczy,przewod_telekomunikacyjny", format: "image/png", transparent: true, version: "1.3.0", minZoom: 18, maxZoom: 20, attribution: "© GUGiK (KIUT)" });
     lyrNatura = L.tileLayer.wms("https://sdi.gdos.gov.pl/wms", { layers: "GDOS:SpecjalneObszaryOchrony,GDOS:ObszarySpecjalnejOchrony", format: "image/png", transparent: true, opacity: 0.6, attribution: "© GDOŚ" });
-    [[lyrFlood, "map.flood"], [lyrNatura, "map.natura"]].forEach(function (x) { var warned = false; x[0].on("tileerror", function () { if (!warned) { warned = true; toast(t("map.layerFail", { n: t(x[1]) })); } }); });
+    [[lyrFlood, "map.flood"], [lyrNatura, "map.natura"], [lyrUtils, "map.utils"]].forEach(function (x) { var warned = false; x[0].on("tileerror", function () { if (!warned) { warned = true; toast(t("map.layerFail", { n: t(x[1]) })); } }); });
     [baseLight, baseOsm, baseOrto, lyrDz, lyrMp].forEach(function (l) {
       l.on("tileerror", function () {
         if (tileFail) return; tileFail = true;
@@ -785,6 +794,7 @@
     $("#lyrFlood").addEventListener("change", function (e) { if (e.target.checked) { lyrFlood.addTo(map); if (map.getZoom() < 9) toast(t("map.zoomFlood")); } else map.removeLayer(lyrFlood); });
     $("#lyrNatura").addEventListener("change", function (e) { if (e.target.checked) lyrNatura.addTo(map); else map.removeLayer(lyrNatura); legend(); });
     $("#lyrFlood").addEventListener("change", legend);
+    $("#lyrUtils").addEventListener("change", function (e) { if (e.target.checked) { lyrUtils.addTo(map); if (map.getZoom() < 18) toast(t("map.zoomUtils")); } else map.removeLayer(lyrUtils); });
     $("#lyrMpzp").addEventListener("change", function (e) { if (e.target.checked) { lyrMp.addTo(map); if (map.getZoom() < 12) toast(t("map.zoomMpzp")); } else map.removeLayer(lyrMp); });
     updateMarkers();
     fitToResults();
@@ -963,7 +973,7 @@
       '<section class="dsec"><h2>' + t("d.utilities") + " " + srcTag + '</h2><div class="utils">' + utils + "</div></section>" +
       '<section class="dsec"><h2>' + t("d.legal") + "</h2>" + legal + "</section>" +
       (!EN() && !(d.typ === "rod" || ((d.typ === "rolna" || d.typ === "siedliskowa") && d.pow >= 3000)) ? buyBox : "") +
-      '<section class="dsec"><h2>' + t("d.location") + '</h2><div class="minimap" id="minimap"></div><p class="muted small" style="margin-top:10px">' + t("d.locNote") + ' <a href="https://www.google.com/maps/search/?api=1&query=' + d.lat + "," + d.lng + '" target="_blank" rel="noopener">Google Maps</a> · <a href="https://mapy.geoportal.gov.pl/" target="_blank" rel="noopener">Geoportal</a></p></section>' +
+      '<section class="dsec"><h2>' + t("d.location") + '</h2><div class="minimap" id="minimap"></div><div class="loc-actions"><button class="btn btn-dark btn-sm" data-act="map:show">' + ICON.pin + t("d.showMap") + '</button><a class="btn btn-ghost btn-sm" href="https://www.google.com/maps/dir/?api=1&destination=' + d.lat + "," + d.lng + '" target="_blank" rel="noopener">' + t("d.route") + '</a></div><p class="muted small" style="margin-top:8px">' + t("d.locNote") + "</p></section>" +
       hist +
       hazardHTML(d) + stepsHTML(d) +
       (similar.length ? '<section class="dsec"><h2>' + t("d.similar") + '</h2><div class="grid-cards sim">' + similar.map(cardHTML).join("") + "</div></section>" : "") +
@@ -979,9 +989,11 @@
       (d.op === "sprzedaz" ? '<div class="panel calc"><h3>' + t("d.costs") + '</h3><div class="seg" id="calcSeg" style="margin-bottom:10px"><button data-f="0" aria-pressed="true">' + t("d.fromPriv") + '</button><button data-f="1" aria-pressed="false">' + t("d.fromFirm") + '</button></div><div id="calcBody">' + calcHTML(d.cena, false) + "</div></div>" : "") +
       "</div></aside></div></div>" +
       '<div class="mbar"><div><div class="price">' + priceLabel(d) + '</div><div class="muted">' + area(d.pow) + (pm ? " · " + ppmLabel(d) : "") + '</div></div><button class="btn btn-ghost" id="mbarCall" aria-label="' + esc(t("d.phone")) + '">' + ICON.phone + '</button><button class="btn btn-primary" id="mbarMsg">' + t("d.write") + "</button></div>" +
+      '<div class="baskets" id="baskets"></div>' +
       "</div></div>";
 
     $("#overlayRoot").innerHTML = h;
+    renderBaskets();
     document.body.style.overflow = "hidden";
     var ov = $("#detailOverlay");
     ov.addEventListener("click", function (e) {
@@ -1027,13 +1039,36 @@
   /* ---------- Ścieżka krok po kroku i zagrożenia ---------- */
   var KR = window.KROKI;
   var ST_ICON = { done: "check", todo: "arrow", check: "info", warn: "warn", cond: "info" };
+  function ticks(d) { return d ? store.get("ticks:" + d.id, []) : []; }
+  function basket(kind) { return curDetail ? store.get(kind + ":" + curDetail, []) : []; }
+  function setBasket(kind, v) { store.set(kind + ":" + curDetail, v); }
   function stepItem(x, n, d) {
-    var k = x.k, who = LL(k.who);
-    return '<li class="step st-' + x.s + '"><span class="step-n">' + (x.s === "done" ? ICON.check : n) + '</span><div class="step-b"><div class="step-h"><b>' + LL(k.t) + '</b><span class="step-tag">' + (x.s === "cond" ? t("steps.cond") + ": " + LL(k.cond) : t("steps." + x.s)) + "</span></div>" +
+    var k = x.k, who = LL(k.who), H = (KR.HELP || {})[x.id] || {}, free = k.pre === "free", tk = ticks(d).indexOf(x.id) >= 0;
+    var h = '<li class="step st-' + x.s + (tk ? " ticked" : "") + '"><span class="step-n">' + (x.s === "done" || tk ? ICON.check : n) + '</span><div class="step-b"><div class="step-h"><b>' + LL(k.t) + '</b><span class="step-tag">' + (x.s === "cond" ? t("steps.cond") + ": " + LL(k.cond) : t("steps." + x.s)) + "</span></div>" +
       (x.n ? '<p class="step-note">' + esc(LL(x.n)) + "</p>" : "") + (k.p && x.s !== "done" ? '<p class="muted">' + LL(k.p) + "</p>" : "") +
-      (k.pre && x.s !== "done" ? '<p class="step-pre pre-' + k.pre + '">' + LL(KR.PRE[k.pre]) + "</p>" : "") +
-      (x.s !== "done" ? '<div class="step-meta"><span>' + t("steps.who") + ": <b>" + who + "</b></span>" + (LL(k.time) !== "-" ? "<span>" + t("steps.time") + ": " + LL(k.time) + "</span><span>" + t("steps.cost") + ": " + LL(k.cost) + "</span>" : "") +
-        '<button class="btn btn-ghost btn-sm" data-pro="' + esc(who) + '" data-near="' + esc(d ? d.powiat : "") + '">' + t("steps.find", { w: who.split(",")[0] }) + "</button></div>" : "") + "</div></li>";
+      (k.pre && x.s !== "done" ? '<p class="step-pre pre-' + k.pre + '">' + LL(KR.PRE[k.pre]) + "</p>" : "");
+    if (x.s !== "done") {
+      var links = (H.where || []).filter(function (w) { return w.u || !/^map|^osd/.test(w.a) || d; }).map(function (w) {
+        if (w.a === "osd") return "";
+        if (w.u) return '<a class="btn btn-ghost btn-sm" href="' + w.u + '" target="_blank" rel="noopener">' + LL(w.l) + (EN() && w.pl ? ' <span class="pl-tag">' + t("w.plSite") + "</span>" : "") + "</a>";
+        return '<button class="btn btn-ghost btn-sm" data-act="' + w.a + '">' + LL(w.l) + "</button>";
+      }).join("");
+      var osd = (H.where || []).some(function (w) { return w.a === "osd"; }) && d ? KR.OSD[d.woj] : null;
+      if (links || osd) h += '<div class="step-where"><span class="lbl">' + t(free || k.pre ? "w.where" : "w.useful") + ":</span>" + links + "</div>";
+      if (osd) { var ou = KR.OSD_URL[osd.split(" ")[0]]; h += '<p class="step-tip">' + esc(t("w.osd", { o: osd })) + (ou ? ' <a href="' + ou + '" target="_blank" rel="noopener">' + osd.split(" (")[0].split(" lub ")[0] + "</a>" : "") + "</p>"; }
+      if (H.tip) h += '<p class="step-tip">' + LL(H.tip) + "</p>";
+      var asked = d && H.ask && basket("ask").indexOf(H.ask) >= 0, quoted = d && H.quote && basket("quote").indexOf(who) >= 0;
+      h += '<div class="step-meta">';
+      if (free) h += "<span>" + t("steps.time") + ": " + LL(k.time) + "</span><span>" + t("steps.cost") + ": " + LL(k.cost) + "</span>";
+      else h += "<span>" + t("steps.who") + ": <b>" + who + "</b></span>" + (LL(k.time) !== "-" ? "<span>" + t("steps.time") + ": " + LL(k.time) + "</span><span>" + t("steps.cost") + ": " + LL(k.cost) + "</span>" : "");
+      h += '<span class="step-btns">';
+      if (d && H.ask) h += '<button class="btn btn-ghost btn-sm' + (asked ? " is-on" : "") + '" data-askq="' + H.ask + '">' + (asked ? ICON.check + t("w.asked") : t("w.ask")) + "</button>";
+      if (d && H.quote) h += '<button class="btn btn-ghost btn-sm' + (quoted ? " is-on" : "") + '" data-quote="' + esc(who) + '">' + (quoted ? ICON.check + t("w.quoted") : t("w.quote", { w: who.split(",")[0] })) + "</button>";
+      if (d) h += '<label class="tick"><input type="checkbox" data-tick="' + x.id + '"' + (tk ? " checked" : "") + ">" + t("w.done") + "</label>";
+      h += "</span></div>";
+      if (free) h += '<button class="consult" data-pro="' + esc(who) + '" data-near="' + esc(d ? d.powiat : "") + '">' + t("w.consult", { w: who }) + "</button>";
+    }
+    return h + "</div></li>";
   }
   function stepsList(list, d) {
     var html = "", ph = null, n = 0;
@@ -1047,12 +1082,83 @@
     if (!KR) return "";
     var list = KR.build(d), g = KR.GOALS[KR.goalFor(d)];
     var c = list.filter(function (x) { return x.s === "check"; }).length, w = list.filter(function (x) { return x.s === "warn"; }).length, dn = list.filter(function (x) { return x.s === "done"; }).length;
-    return '<section class="dsec" id="stepsSec"><h2>' + t("steps.title") + '</h2><p class="muted">' + t("steps.goal") + ": <b>" + LL(g.n) + "</b> · " + t("steps.sum", { c: c, w: w, d: dn }) + "</p>" + stepsList(list, d) + '<p class="muted small">' + t("guide2.draft") + "</p></section>";
+    var open = list.filter(function (x) { return x.s !== "done"; }), tk = ticks(d).filter(function (id) { return open.some(function (x) { return x.id === id; }); }).length;
+    return '<section class="dsec" id="stepsSec"><h2>' + t("steps.title") + '</h2><p class="muted">' + t("steps.goal") + ": <b>" + LL(g.n) + "</b> · " + t("steps.sum", { c: c, w: w, d: dn }) + '</p><div class="steps-top"><span class="prog"><span style="width:' + (open.length ? Math.round(tk / open.length * 100) : 0) + '%"></span></span><span class="muted small">' + t("w.progress", { n: tk, m: open.length }) + '</span><button class="btn btn-ghost btn-sm" data-pdf>' + t("w.pdf") + "</button></div>" + stepsList(list, d) + '<p class="muted small">' + t("guide2.draft") + "</p></section>";
   }
   function hazardHTML(d) {
     if (!KR) return "";
     var h = KR.hazards(d);
     return '<section class="dsec"><h2>' + t("hz.title") + "</h2>" + (h.length ? h.map(function (x) { var z = KR.HZ[x[1]]; return '<div class="callout ' + x[0] + '">' + (x[0] === "warn" ? ICON.warn : ICON.info) + "<div><b>" + LL(z[0]) + "</b><p>" + LL(z[1]) + "</p></div></div>"; }).join("") : '<p class="desc">' + t("hz.none") + "</p>") + '<p class="muted small">' + t("hz.note") + "</p></section>";
+  }
+  function renderBaskets() {
+    var el = $("#baskets"); if (!el) return;
+    var a = basket("ask").length, q = basket("quote").length;
+    el.innerHTML = (a ? '<button class="bk" data-basket="ask">' + ICON.info + t("b.ask") + ' <span class="bk-n">' + a + "</span></button>" : "") + (q ? '<button class="bk" data-basket="quote">' + ICON.phone + t("b.quote") + ' <span class="bk-n">' + q + "</span></button>" : "");
+    el.hidden = !(a || q);
+  }
+  function pulse(kind) { var b = $('[data-basket="' + kind + '"]'); if (b) { b.classList.remove("pulse"); void b.offsetWidth; b.classList.add("pulse"); } }
+  function rerenderSteps() { var d = ALL.find(function (x) { return x.id === curDetail; }), sec = $("#stepsSec"); if (!d || !sec) return; var tmp = document.createElement("div"); tmp.innerHTML = stepsHTML(d); sec.replaceWith(tmp.firstChild); renderBaskets(); }
+  function openBasket(kind) {
+    var d = ALL.find(function (x) { return x.id === curDetail; }); if (!d) return;
+    var items = basket(kind);
+    function txt(it, lang) { return typeof it === "string" ? (kind === "ask" ? KR.ASK[it][lang] : it) : it.own; }
+    var body = '<p class="muted" style="margin-bottom:12px">' + (kind === "ask" ? t("b.askLead") : t("b.quoteLead", { a: d.powiat })) + "</p>" +
+      (items.length ? '<ul class="bk-list">' + items.map(function (it, i) { return "<li><span>" + esc(txt(it, EN() ? 1 : 0)) + (typeof it !== "string" && EN() ? ' <i class="muted">' + t("b.ownEn") + "</i>" : "") + '</span><button class="icon-btn" data-bkrm="' + i + '" aria-label="×">' + ICON.close + "</button></li>"; }).join("") + "</ul>" : '<p class="muted">' + t("b.empty") + "</p>") +
+      (kind === "ask" ? '<div class="pair" style="margin-top:12px"><input class="input" id="bkOwn" placeholder="' + esc(t("b.own")) + '"><button class="btn btn-ghost" id="bkAdd">' + t("b.add") + "</button></div>" : "") +
+      (EN() && kind === "ask" && items.length ? '<div class="bk-pl"><b>' + t("b.sellerGets") + "</b><ul>" + items.map(function (it) { return "<li>" + esc(typeof it === "string" ? KR.ASK[it][0] : it.own + " (po angielsku)") + "</li>"; }).join("") + "</ul></div>" : "") +
+      (EN() && kind === "quote" ? '<p class="muted small">' + t("b.enNote") + "</p>" : "") +
+      '<button class="btn btn-primary btn-lg" id="bkSend" style="width:100%;margin-top:14px"' + (items.length ? "" : " disabled") + ">" + (kind === "ask" ? t("b.send") : t("b.sendQ")) + "</button>";
+    modal(kind === "ask" ? t("b.ask") : t("b.quote"), body, function (el, close) {
+      el.addEventListener("click", function (e) {
+        var r = e.target.closest("[data-bkrm]");
+        if (r) { items.splice(+r.dataset.bkrm, 1); setBasket(kind, items); close(); rerenderSteps(); openBasket(kind); return; }
+        if (e.target.closest("#bkAdd")) { var v = $("#bkOwn", el).value.trim(); if (v) { items.push({ own: v }); setBasket(kind, items); close(); renderBaskets(); openBasket(kind); } return; }
+        if (e.target.closest("#bkSend")) { setBasket(kind, []); close(); rerenderSteps(); toast(kind === "ask" ? t("b.sent") : t("b.sentQ")); }
+      });
+    });
+  }
+  function focusPlot(d, mode) {
+    closeDetail(true);
+    S = emptyState(); go("mapa");
+    setTimeout(function () {
+      if (!map) return;
+      map.setView([d.lat, d.lng], { hazards: 13, mpzp: 16, utils: 19 }[mode] || 17);
+      var cb = function (id) { var c = $(id); if (c && !c.checked) { c.checked = true; c.dispatchEvent(new Event("change")); } };
+      if (mode === "show" || mode === "parcels") { cb("#lyrDzialki"); var r = $('#layers input[value="orto"]'); if (r && !r.checked) { r.checked = true; r.dispatchEvent(new Event("change")); } }
+      if (mode === "mpzp") cb("#lyrMpzp");
+      if (mode === "hazards") { cb("#lyrFlood"); cb("#lyrNatura"); }
+      if (mode === "utils") { cb("#lyrUtils"); cb("#lyrDzialki"); }
+      if (markers[d.id]) setTimeout(function () { markers[d.id].openPopup(); }, 300);
+    }, 650);
+  }
+  function openDoc(which) {
+    var d = ALL.find(function (x) { return x.id === curDetail; }) || { gmina: "...", nr: "...", miejscowosc: "..." };
+    var html = which === "wypis" ? t("doc.wypis", { g: d.gmina, nr: d.nr, m: d.miejscowosc }) : t("doc.not");
+    modal(which === "wypis" ? t("doc.wypisH") : t("doc.notH"), '<div class="doc">' + html + '</div><button class="btn btn-ghost" id="docPrint" style="margin-top:12px">' + t("w.pdf").split(" (")[0].replace(/listę|the list/, "") + " PDF</button>", function (el) {
+      $("#docPrint", el).addEventListener("click", function () { printHTML(which === "wypis" ? t("doc.wypisH") : t("doc.notH"), html); });
+    });
+  }
+  function openKowr() {
+    modal(t("kowr.h"), "<p>" + t("kowr.q") + '</p><div class="buyer-pick"><button class="pill" data-k="1">' + t("kowr.yes") + '</button><button class="pill" data-k="0">' + t("kowr.no") + '</button></div><div id="kAns"></div>', function (el) {
+      el.addEventListener("click", function (e) { var b = e.target.closest("[data-k]"); if (!b) return; $$("[data-k]", el).forEach(function (x) { x.classList.toggle("on", x === b); }); $("#kAns", el).innerHTML = '<div class="callout ' + (b.dataset.k === "1" ? "ok" : "warn") + '">' + (b.dataset.k === "1" ? ICON.check : ICON.warn) + "<div><p>" + t(b.dataset.k === "1" ? "kowr.aYes" : "kowr.aNo") + "</p></div></div>"; });
+    });
+  }
+  function openRata() {
+    var d = ALL.find(function (x) { return x.id === curDetail; });
+    modal(t("rata.h"), '<div class="row2"><div class="field"><label for="r-a">' + t("rata.amount") + (EN() ? ", €" : ", zł") + '</label><input class="input num" id="r-a" inputmode="numeric" value="' + (d ? cur(d.cena * 0.8) : 300000) + '"></div><div class="field"><label for="r-y">' + t("rata.years") + '</label><select class="input" id="r-y">' + [10, 15, 20, 25, 30, 35].map(function (y) { return "<option" + (y === 25 ? " selected" : "") + ">" + y + "</option>"; }).join("") + '</select></div></div><div class="field"><label for="r-p">' + t("rata.rate") + '</label><select class="input" id="r-p">' + [5, 5.5, 6, 6.5, 7, 7.5, 8].map(function (v) { return "<option" + (v === 7 ? " selected" : "") + ">" + v + "</option>"; }).join("") + '</select></div><p class="rata-res" id="r-res"></p><p class="muted small">' + t("rata.note") + "</p>", function (el) {
+      function calc() { var A = num($("#r-a", el).value) || 0, n = +$("#r-y", el).value * 12, r = +$("#r-p", el).value / 1200, R = r ? A * r / (1 - Math.pow(1 + r, -n)) : A / n; $("#r-res", el).textContent = t("rata.res", { v: (EN() ? "€" : "") + fmt(R) + (EN() ? "" : " zł") }); }
+      el.addEventListener("input", calc); el.addEventListener("change", calc); calc();
+    });
+  }
+  function printHTML(title, html) {
+    var w = window.open("", "_blank"); if (!w) { toast(title); return; }
+    w.document.write('<!doctype html><html lang="' + I.lang + '"><head><meta charset="utf-8"><title>' + esc(title) + '</title><style>body{font-family:system-ui,sans-serif;max-width:720px;margin:32px auto;padding:0 20px;color:#111;line-height:1.5}h1{font-size:22px}li{margin:6px 0}.st{font-size:12px;color:#555}.box{display:inline-block;width:14px;height:14px;border:1.5px solid #333;margin-right:8px;vertical-align:-2px}</style></head><body><h1>' + esc(title) + "</h1>" + html + "<script>setTimeout(function(){print()},300)<\/script></body></html>");
+    w.document.close();
+  }
+  function printSteps(d) {
+    var list = KR.build(d), tk = ticks(d);
+    var html = "<p>" + esc(title(d)) + "<br>" + esc(d.miejscowosc + ", " + d.gmina + ", " + d.woj) + "</p><ol>" + list.map(function (x) { return "<li><span class=\"box\">" + (x.s === "done" || tk.indexOf(x.id) >= 0 ? "✓" : "") + "</span><b>" + esc(LL(x.k.t)) + '</b> <span class="st">(' + esc(t("steps." + x.s)) + ")</span>" + (x.n ? "<br>" + esc(LL(x.n)) : "") + "</li>"; }).join("") + "</ol><p class=\"st\">" + esc(t("guide2.draft")) + "</p>";
+    printHTML(t("steps.title"), html);
   }
   var guideGoal = "dom";
   function renderGuide() {
@@ -1243,6 +1349,19 @@
       }
       if (e.target.closest("#hs-loc")) { openLoc(t("loc.title"), function (q, r) { home.q = q; home.r = r; $("#hs-loc").innerHTML = "<span>" + esc(locLabel(q, r)) + "</span>" + ICON.chev; updateHomeCount(); }); return; }
       if (e.target.closest("[data-contact]")) { openContact(); return; }
+      if ((x = e.target.closest("[data-askq]"))) { var ak = basket("ask"), key = x.dataset.askq, ia = ak.indexOf(key); if (ia >= 0) ak.splice(ia, 1); else ak.push(key); setBasket("ask", ak); rerenderSteps(); if (ia < 0) pulse("ask"); return; }
+      if ((x = e.target.closest("[data-quote]"))) { var qk = basket("quote"), wq = x.dataset.quote, iq = qk.indexOf(wq); if (iq >= 0) qk.splice(iq, 1); else qk.push(wq); setBasket("quote", qk); rerenderSteps(); if (iq < 0) pulse("quote"); return; }
+      if ((x = e.target.closest("[data-basket]"))) { openBasket(x.dataset.basket); return; }
+      if (e.target.closest("[data-pdf]")) { var dp = ALL.find(function (y) { return y.id === curDetail; }); if (dp) printSteps(dp); return; }
+      if ((x = e.target.closest("[data-act]"))) {
+        var act = x.dataset.act, dd = ALL.find(function (y) { return y.id === curDetail; });
+        if (act.indexOf("map:") === 0 && dd) { focusPlot(dd, act.slice(4)); return; }
+        if (act === "calc") { var cp = $(".calc"); if (cp) cp.scrollIntoView({ behavior: "smooth", block: "center" }); return; }
+        if (act.indexOf("doc:") === 0) { openDoc(act.slice(4)); return; }
+        if (act === "kowr") { openKowr(); return; }
+        if (act === "rata") { openRata(); return; }
+        return;
+      }
       if ((x = e.target.closest("[data-goal]"))) { guideGoal = x.dataset.goal; renderGuide(); return; }
       if ((x = e.target.closest("[data-pro]"))) { toast(t("steps.proToast", { w: x.dataset.pro, a: x.dataset.near || (EN() ? "you" : "Ciebie") })); return; }
       if ((x = e.target.closest("[data-three]"))) { var w3 = x.dataset.three; if (w3 === "1") { S = emptyState(); go("mapa"); } else if (w3 === "2") { var ex = ALL.find(function (d) { return d.zweryfikowany && d.typ === "budowlana" && d.plan.status !== "MPZP"; }) || ALL[0]; openDetail(ex.id); setTimeout(function () { var el = $("#stepsSec"); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }, 350); } else go("firmy"); return; }
@@ -1288,6 +1407,12 @@
     hs.addEventListener("submit", function (e) { e.preventDefault(); homeSearch(); });
     $$("#homeSearch .sb-field").forEach(function (f) { f.addEventListener("click", function (e) { if (e.target === f || e.target.tagName === "LABEL" || e.target.classList.contains("lbl")) { var i = $("input, select", f); if (i) i.focus(); } }); });
 
+    document.addEventListener("change", function (e) {
+      var tb = e.target.closest && e.target.closest("[data-tick]"); if (!tb || !curDetail) return;
+      var tl = store.get("ticks:" + curDetail, []), id = tb.dataset.tick, i = tl.indexOf(id);
+      if (tb.checked && i < 0) tl.push(id); if (!tb.checked && i >= 0) tl.splice(i, 1);
+      store.set("ticks:" + curDetail, tl); rerenderSteps();
+    });
     var fl = $("#filters");
     fl.addEventListener("change", function (e) {
       var x = e.target;

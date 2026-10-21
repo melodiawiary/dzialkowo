@@ -840,3 +840,47 @@ html:not(.lang-en) .only-en, html.lang-en .only-pl { display: none !important; }
 .pre-free { background: color-mix(in srgb, var(--brand) 12%, var(--surface)); color: var(--brand); }
 .pre-cheap, .pre-seller { background: var(--surface-2); color: var(--ink-2, var(--ink)); }
 .pre-paid { background: color-mix(in srgb, #c27a12 14%, var(--surface)); color: #8a5208; }
+
+/* ===== v7: pomoce w krokach, koszyki, mapa Polski ===== */
+.allpl-btn { width: 36px; height: 36px; border: 0; border-radius: 6px; background: #fff; box-shadow: 0 1px 5px rgba(0,0,0,.25); display: grid; place-items: center; cursor: pointer; color: #222; margin-top: 8px !important; }
+.allpl-btn svg { width: 18px; height: 18px; }
+.allpl-btn:hover { background: #f2f2f2; }
+.loc-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.loc-actions .btn svg { width: 16px; height: 16px; }
+.step-where { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 10px; }
+.step-where .lbl { font-size: 13px; font-weight: 650; color: var(--ink); margin-right: 2px; }
+.pl-tag { font-size: 11px; font-weight: 600; color: var(--muted); background: var(--surface-2); padding: 1px 6px; border-radius: 999px; margin-left: 4px; }
+.step-tip { font-size: 13.5px !important; color: var(--ink-2, var(--ink)); background: var(--surface-2); border-radius: 8px; padding: 8px 10px; margin-top: 8px !important; }
+.step-tip a { color: var(--brand); font-weight: 600; }
+.step-btns { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-left: auto; }
+.step-meta .step-btns .btn { margin-left: 0; }
+.btn.is-on { border-color: var(--brand); color: var(--brand); background: color-mix(in srgb, var(--brand) 8%, var(--surface)); }
+.btn.is-on svg { width: 14px; height: 14px; }
+.tick { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--ink); cursor: pointer; padding: 4px 6px; min-height: 32px; }
+.tick input { width: 18px; height: 18px; accent-color: var(--brand); }
+.step.ticked { opacity: .72; }
+.step.ticked .step-n { background: var(--brand); color: #fff; }
+.consult { border: 0; background: none; padding: 6px 0 0; font: inherit; font-size: 12.5px; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.steps-top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 10px 0 4px; }
+.prog { flex: 1 1 160px; height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; max-width: 260px; }
+.prog span { display: block; height: 100%; background: var(--brand); border-radius: 999px; transition: width .3s; }
+.baskets { position: fixed; right: 24px; bottom: 24px; z-index: 1150; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+.bk { display: inline-flex; align-items: center; gap: 8px; border: 0; background: var(--ink); color: var(--bg); font: inherit; font-weight: 650; font-size: 14.5px; padding: 12px 16px; border-radius: 999px; cursor: pointer; box-shadow: 0 10px 28px -8px rgba(0,0,0,.45); }
+.bk svg { width: 18px; height: 18px; }
+.bk-n { background: var(--brand); color: #fff; min-width: 24px; height: 24px; border-radius: 999px; display: inline-grid; place-items: center; font-size: 13px; padding: 0 6px; }
+.bk.pulse { animation: bkp .6s ease; }
+@keyframes bkp { 0% { transform: scale(1); } 35% { transform: scale(1.12); box-shadow: 0 0 0 8px color-mix(in srgb, var(--brand) 30%, transparent); } 100% { transform: scale(1); } }
+.bk-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.bk-list li { display: flex; align-items: center; gap: 10px; justify-content: space-between; border: 1px solid var(--line); border-radius: 10px; padding: 8px 8px 8px 12px; font-size: 14.5px; }
+.bk-pl { margin-top: 14px; background: var(--surface-2); border-radius: 10px; padding: 10px 12px; font-size: 13.5px; }
+.bk-pl ul { margin: 6px 0 0; padding-left: 18px; }
+.doc { background: var(--surface-2); border-radius: 10px; padding: 14px 16px; font-size: 14.5px; line-height: 1.5; }
+.doc p { margin: 0 0 8px; }
+.doc ul { margin: 4px 0 10px; padding-left: 20px; }
+.rata-res { font-size: 20px; font-weight: 700; margin: 10px 0 4px; }
+@media (max-width: 1180px) { .baskets { bottom: 88px; right: 14px; } }
+@media (max-width: 720px) {
+  .step-btns { margin-left: 0; width: 100%; }
+  .step-btns .btn { flex: 1 1 auto; }
+  .bk { font-size: 13.5px; padding: 10px 14px; }
+}
